@@ -171,13 +171,24 @@ handle_info(Msg, State) ->
 terminate(_Reason, {not_started, _}) ->
     ok;
 
-terminate(_Reason, #state{downstream_channel    = DCh,
-                          downstream_connection = DConn,
-                          connection            = Conn,
-                          channel               = Ch}) ->
+terminate(Reason, State = #state{downstream_channel    = DCh,
+                                 downstream_connection = DConn,
+                                 connection            = Conn,
+                                 channel               = Ch}) ->
     ensure_closed(DConn, DCh),
     ensure_closed(Conn, Ch),
+    log_terminate(Reason, State),
     ok.
+
+log_terminate({shutdown, restart}, _State) ->
+    %% We've already logged this before munging the reason
+    ok;
+
+log_terminate(Reason, #state{downstream_exchange = XName,
+                             upstream            = Upstream}) ->
+    %% Unexpected death. sasl will log it, but we should update
+    %% rabbit_federation_status.
+    rabbit_federation_old_status:report(Upstream, XName, clean_reason(Reason)).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
