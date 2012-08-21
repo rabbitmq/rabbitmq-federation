@@ -43,5 +43,5 @@ init({UpstreamSet, XName}) ->
 
 spec(Upstream = #upstream{reconnect_delay = Delay}, XName) ->
     {Upstream, {rabbit_federation_link, start_link, [{Upstream, XName}]},
-     {transient, Delay}, ?MAX_WAIT, worker,
+     {permanent, Delay}, ?MAX_WAIT, worker,
      [rabbit_federation_link]}.
