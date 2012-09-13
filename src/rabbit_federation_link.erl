@@ -188,7 +188,7 @@ log_terminate(Reason, #state{downstream_exchange = XName,
                              upstream            = Upstream}) ->
     %% Unexpected death. sasl will log it, but we should update
     %% rabbit_federation_status.
-    rabbit_federation_old_status:report(Upstream, XName, clean_reason(Reason)).
+    rabbit_federation_status:report(Upstream, XName, clean_reason(Reason)).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
