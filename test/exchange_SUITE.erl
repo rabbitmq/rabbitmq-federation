@@ -51,7 +51,9 @@ groups() ->
               dynamic_reconfiguration,
               dynamic_reconfiguration_integrity,
               federate_unfederate,
-              dynamic_plugin_stop_start
+              dynamic_plugin_stop_start,
+              dynamic_plugin_cleanup_stop_start,
+              dynamic_policy_cleanup
             ]}
         ]},
       {with_disambiguate, [], [
@@ -749,6 +751,69 @@ dynamic_plugin_stop_start(Config) ->
               clear_policy(Config, 0, <<"dyn">>),
               assert_connections(Config, 0, [X1, X2], [])
       end, [x(X1)]).
+
+dynamic_plugin_cleanup_stop_start(Config) ->
+    X1 = <<"dyn.exch1">>,
+    with_ch(Config,
+      fun (_Ch) ->
+              set_policy(Config, 0, <<"dyn">>, <<"^dyn\\.">>, <<"localhost">>),
+
+              %% Declare federated exchange - get link
+              assert_connections(Config, 0, [X1], [<<"localhost">>]),
+              timer:sleep(5000),
+
+              true = has_internal_federated_exchange(Config, 0, <<"/">>),
+              true = has_internal_federated_queue(Config, 0, <<"/">>),
+
+              %% Disable plugin, link goes
+              ok = rabbit_ct_broker_helpers:disable_plugin(Config, 0,
+                "rabbitmq_federation"),
+
+              false = has_internal_federated_exchange(Config, 0, <<"/">>),
+              false = has_internal_federated_queue(Config, 0, <<"/">>),
+
+              ok = rabbit_ct_broker_helpers:enable_plugin(Config, 0,
+                "rabbitmq_federation"),
+              clear_policy(Config, 0, <<"dyn">>),
+              assert_connections(Config, 0, [X1], [])
+      end, [x(X1)]).
+
+dynamic_policy_cleanup(Config) ->
+    X1 = <<"dyn.exch1">>,
+    with_ch(Config,
+      fun (_Ch) ->
+              set_policy(Config, 0, <<"dyn">>, <<"^dyn\\.">>, <<"localhost">>),
+
+              %% Declare federated exchange - get link
+              assert_connections(Config, 0, [X1], [<<"localhost">>]),
+              timer:sleep(5000),
+
+              true = has_internal_federated_exchange(Config, 0, <<"/">>),
+              true = has_internal_federated_queue(Config, 0, <<"/">>),
+
+              clear_policy(Config, 0, <<"dyn">>),
+              timer:sleep(5000),
+
+              false = has_internal_federated_exchange(Config, 0, <<"/">>),
+              false = has_internal_federated_queue(Config, 0, <<"/">>),
+
+              clear_policy(Config, 0, <<"dyn">>),
+              assert_connections(Config, 0, [X1], [])
+      end, [x(X1)]).
+
+has_internal_federated_exchange(Config, Node, VHost) ->
+    lists:any(fun(X) ->
+                      X#exchange.type == 'x-federation-upstream'
+              end, rabbit_ct_broker_helpers:rpc(Config, Node,
+                                                rabbit_exchange, list, [VHost])).
+
+has_internal_federated_queue(Config, Node, VHost) ->
+    lists:any(
+      fun(Q) ->
+              {'longstr', <<"federation">>} ==
+                  rabbit_misc:table_lookup(Q#amqqueue.arguments, <<"x-internal-purpose">>)
+      end, rabbit_ct_broker_helpers:rpc(Config, Node,
+                                        rabbit_amqqueue, list, [VHost])).
 
 %%----------------------------------------------------------------------------
 

@@ -198,8 +198,14 @@ terminate(Reason, #state{downstream_connection = DConn,
                          upstream              = Upstream,
                          upstream_params       = UParams,
                          downstream_exchange   = XName,
-                         internal_exchange_timer = TRef}) ->
+                         internal_exchange_timer = TRef,
+                         internal_exchange     = IntExchange,
+                         queue                 = Queue,
+                         channel               = Ch}) ->
     timer:cancel(TRef),
+    amqp_channel:call(Ch, #'queue.delete'{queue = Queue}),
+    delete_upstream_exchange(Conn, IntExchange),
+
     rabbit_federation_link_util:ensure_connection_closed(DConn),
     rabbit_federation_link_util:ensure_connection_closed(Conn),
     rabbit_federation_link_util:log_terminate(Reason, Upstream, UParams, XName),
