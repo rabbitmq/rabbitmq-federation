@@ -1,5 +1,12 @@
 ## RabbitMQ Federation
 
+## This was migrated to https://github.com/rabbitmq/rabbitmq-server
+
+This repository has been moved to the main unified RabbitMQ "monorepo", including all open issues. You can find the source under [/deps/rabbitmq_federation](https://github.com/rabbitmq/rabbitmq-server/tree/master/deps/rabbitmq_federation).
+All issues have been transferred.
+
+## Overview
+
 [![Build Status](https://travis-ci.org/rabbitmq/rabbitmq-federation.svg?branch=master)](https://travis-ci.org/rabbitmq/rabbitmq-federation)
 
 RabbitMQ federation offers a group of features for loosely
